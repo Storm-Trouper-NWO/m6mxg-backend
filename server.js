@@ -8,13 +8,15 @@ app.use(cors());
 
 const CALLSIGN = "M6MXG";
 
+// Simple homepage check
 app.get("/", (req, res) => {
   res.send("M6MXG Backend Running");
 });
 
+// 📡 MAIN API (YOU HEARD STATIONS)
 app.get("/api/spots", async (req, res) => {
   try {
-    const url = `https://retrieve.pskreporter.info/query?senderCallsign=${CALLSIGN}&flowStartSeconds=-86400`;
+    const url = `https://retrieve.pskreporter.info/query?receiverCallsign=${CALLSIGN}&flowStartSeconds=-86400`;
 
     const response = await fetch(url);
     const xml = await response.text();
@@ -25,9 +27,9 @@ app.get("/api/spots", async (req, res) => {
     const reports = result?.receptionReport?.receptionReport || [];
 
     const spots = reports.map(r => ({
-      lat: parseFloat(r.$.receiverLocatorLat || 0),
-      lon: parseFloat(r.$.receiverLocatorLon || 0),
-      callsign: r.$.receiverCallsign,
+      lat: parseFloat(r.$.senderLocatorLat || 0),
+      lon: parseFloat(r.$.senderLocatorLon || 0),
+      callsign: r.$.senderCallsign,
       mode: r.$.mode,
       snr: parseFloat(r.$.sNR || 0),
 
