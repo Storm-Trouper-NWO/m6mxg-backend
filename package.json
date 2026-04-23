@@ -1,0 +1,11 @@
+{
+  "name": "m6mxg-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.2",
+    "xml2js": "^0.6.2"
+  }
+}
