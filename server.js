@@ -8,9 +8,13 @@ app.use(cors());
 
 const CALLSIGN = "M6MXG";
 
+app.get("/", (req, res) => {
+  res.send("M6MXG Backend Running");
+});
+
 app.get("/api/spots", async (req, res) => {
   try {
-    const url = `https://retrieve.pskreporter.info/query?senderCallsign=${CALLSIGN}&flowStartSeconds=-3600`;
+    const url = `https://retrieve.pskreporter.info/query?senderCallsign=${CALLSIGN}&flowStartSeconds=-86400`;
 
     const response = await fetch(url);
     const xml = await response.text();
@@ -18,13 +22,18 @@ app.get("/api/spots", async (req, res) => {
     const parser = new xml2js.Parser();
     const result = await parser.parseStringPromise(xml);
 
-    const reports = result.receptionReport?.receptionReport || [];
+    const reports = result?.receptionReport?.receptionReport || [];
 
     const spots = reports.map(r => ({
       lat: parseFloat(r.$.receiverLocatorLat || 0),
       lon: parseFloat(r.$.receiverLocatorLon || 0),
       callsign: r.$.receiverCallsign,
-      mode: r.$.mode
+      mode: r.$.mode,
+      snr: parseFloat(r.$.sNR || 0),
+
+      // 📍 YOUR LOCATION (edit if needed)
+      txLat: 53.6,
+      txLon: -2.2
     }));
 
     res.json(spots);
