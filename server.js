@@ -1,17 +1,30 @@
 app.get("/api/spots", async (req, res) => {
   try {
-    const url = `https://retrieve.pskreporter.info/query?flowStartSeconds=-3600`;
+    const base = "https://retrieve.pskreporter.info/query?flowStartSeconds=-3600";
 
-    const response = await fetch(url);
-    const xml = await response.text();
+    // 🔄 fetch BOTH directions
+    const [txRes, rxRes] = await Promise.all([
+      fetch(`${base}&senderCallsign=M6MXG`),
+      fetch(`${base}&receiverCallsign=M6MXG`)
+    ]);
+
+    const [txXml, rxXml] = await Promise.all([
+      txRes.text(),
+      rxRes.text()
+    ]);
 
     const parser = new xml2js.Parser();
-    const result = await parser.parseStringPromise(xml);
 
-    const reports = result?.receptionReport?.receptionReport || [];
+    const txData = await parser.parseStringPromise(txXml);
+    const rxData = await parser.parseStringPromise(rxXml);
 
-    // 🔥 TAKE FIRST 100 REAL SPOTS (NO STRICT FILTER)
-    const spots = reports.slice(0, 100).map(r => ({
+    const txReports = txData?.receptionReport?.receptionReport || [];
+    const rxReports = rxData?.receptionReport?.receptionReport || [];
+
+    // 🔥 combine both
+    const combined = [...txReports, ...rxReports];
+
+    const spots = combined.map(r => ({
       lat: parseFloat(r.$.senderLocatorLat || r.$.receiverLocatorLat || 0),
       lon: parseFloat(r.$.senderLocatorLon || r.$.receiverLocatorLon || 0),
       callsign: r.$.senderCallsign || r.$.receiverCallsign || "UNKNOWN",
