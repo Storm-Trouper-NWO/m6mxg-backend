@@ -1,11 +1,30 @@
+import express from "express";
+import cors from "cors";
+import fetch from "node-fetch";
+import xml2js from "xml2js";
+
+const app = express();
+app.use(cors());
+
+const CALLSIGN = "M6MXG";
+
+// ✅ health check
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    message: "M6MXG backend running",
+    time: new Date().toISOString()
+  });
+});
+
+// 🌍 MAIN API (FIXED VERSION)
 app.get("/api/spots", async (req, res) => {
   try {
     const base = "https://retrieve.pskreporter.info/query?flowStartSeconds=-3600";
 
-    // 🔄 fetch BOTH directions
     const [txRes, rxRes] = await Promise.all([
-      fetch(`${base}&senderCallsign=M6MXG`),
-      fetch(`${base}&receiverCallsign=M6MXG`)
+      fetch(`${base}&senderCallsign=${CALLSIGN}`),
+      fetch(`${base}&receiverCallsign=${CALLSIGN}`)
     ]);
 
     const [txXml, rxXml] = await Promise.all([
@@ -21,7 +40,6 @@ app.get("/api/spots", async (req, res) => {
     const txReports = txData?.receptionReport?.receptionReport || [];
     const rxReports = rxData?.receptionReport?.receptionReport || [];
 
-    // 🔥 combine both
     const combined = [...txReports, ...rxReports];
 
     const spots = combined.map(r => ({
@@ -30,7 +48,6 @@ app.get("/api/spots", async (req, res) => {
       callsign: r.$.senderCallsign || r.$.receiverCallsign || "UNKNOWN",
       mode: r.$.mode || "unknown",
       snr: parseFloat(r.$.sNR || 0),
-
       txLat: 53.6,
       txLon: -2.2
     }));
@@ -41,4 +58,10 @@ app.get("/api/spots", async (req, res) => {
     console.log(err);
     res.json([]);
   }
+});
+
+// 🚀 start server
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
 });
