@@ -16,7 +16,7 @@ app.get("/", (req, res) => {
 // 📡 MAIN API (YOU HEARD STATIONS)
 app.get("/api/spots", async (req, res) => {
   try {
-    const url = `https://retrieve.pskreporter.info/query?receiverCallsign=${CALLSIGN}&flowStartSeconds=-86400`;
+    const url = `https://retrieve.pskreporter.info/query?receiverCallsign=M6MXG&flowStartSeconds=-86400`;
 
     const response = await fetch(url);
     const xml = await response.text();
