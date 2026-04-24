@@ -8,13 +8,18 @@ app.use(cors());
 
 const CALLSIGN = "M6MXG";
 
-app.get("/", (req, res) => {
-  res.send("M6MXG Backend Running");
+// 🟢 HEALTH CHECK ENDPOINT
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    message: "M6MXG backend is running",
+    time: new Date().toISOString()
+  });
 });
 
+// 🧪 MAIN API
 app.get("/api/spots", async (req, res) => {
   try {
-    // 🔥 Use BOTH sender + receiver queries fallback style
     const url = `https://retrieve.pskreporter.info/query?flowStartSeconds=-86400`;
 
     const response = await fetch(url);
@@ -25,7 +30,6 @@ app.get("/api/spots", async (req, res) => {
 
     const reports = result?.receptionReport?.receptionReport || [];
 
-    // 🧠 Filter anything related to your callsign (safe client-side filter)
     const filtered = reports.filter(r => {
       const sender = r?.$?.senderCallsign || "";
       const receiver = r?.$?.receiverCallsign || "";
@@ -39,30 +43,14 @@ app.get("/api/spots", async (req, res) => {
       mode: r.$.mode || "unknown",
       snr: parseFloat(r.$.sNR || 0),
 
-      // 📍 YOUR QTH (edit if needed)
       txLat: 53.6,
       txLon: -2.2
     }));
 
-    // 🛑 NEVER return empty map — fallback marker so UI always shows something
-    if (spots.length === 0) {
-      return res.json([
-        {
-          lat: 0,
-          lon: 0,
-          callsign: "NO DATA (check WSJT-X / PSK Reporter)",
-          mode: "N/A",
-          snr: 0,
-          txLat: 53.6,
-          txLon: -2.2
-        }
-      ]);
-    }
-
-    res.json(spots);
+    res.json(spots.length ? spots : []);
 
   } catch (err) {
-    console.log("ERROR:", err);
+    console.log(err);
     res.json([]);
   }
 });
